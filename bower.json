@@ -1,10 +1,10 @@
 {
-  "name": "usydhealth",
+  "name": "admusic",
   "version": "1.0",
   "authors": [
-    "Minority Report"
+    "Rafael Possas"
   ],
-  "description": "University of Sydney Health Competition",
+  "description": "Advanced Data Models Music Service",
   "license": "MIT",
   "private": true,
   "ignore": [
