@@ -53,6 +53,26 @@ var createUser = function (req, res, next) {
     });
 
 }
+var friend = function(req,res,next){
+    var user1_id = req.body.user1;
+    var user2_id = req.body.user2;
+    var promise = User.schema.methods.friend(user1_id,user2_id);
+    promise
+        .then(function(data){
+            res.status(200).send(data);
+        },function(err){
+            res.status(501).send({message:err});
+        });
+}
+var getFriends = function(req,res,next){
+    var promise = User.schema.methods.findAllUserFriends(req.params.id);
+    promise
+        .then(function(data){
+            res.status(200).send(data);
+        },function(err){
+            res.status(500).send({message: err});
+        })
+}
 var loginSuccessful = function (req, res) {
     createToken(req.user, res)
 }
@@ -60,3 +80,5 @@ var loginSuccessful = function (req, res) {
 exports.loginSuccessful = loginSuccessful;
 exports.createUser = createUser;
 exports.createToken = createToken;
+exports.friend = friend;
+exports.getFriends = getFriends;

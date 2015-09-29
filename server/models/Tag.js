@@ -3,33 +3,35 @@ var Tag = function(){
     var fs = require('fs');
     var Q = require('q');
     var Artist = require("./Artist")
+
+    var allArtists = [];
+    var objectTaggedArtistArray = [];
+    var taggedArtists = [];
+
+    var iutil = require('../services/import');
+
     var TagSchema = mongoose.Schema({
         _id: Number,
         description: {type:String,required: '{PATH} is required'}
     });
 
     TagSchema.methods = {
-        importTags: function (){
-            var readFileAsync = function(name,type){
-                return Q.nfcall(fs.readFile,name,type);
-            }
-            var promise = _model.find({}).exec();
-            var objectTaggedArtistArray = [];
-            var allTags = [];
-            var allArtists = [];
+        importTags: function(file){
+            var deferred = Q.defer();
+            var promise = Q.ninvoke(_model,"find",{});
             var isImported = false;
+            var objectTagsArray = [];
             promise
                 .then(function(col){
-                  if(col.length === 0){
-                      return readFileAsync('./data/tags.dat','utf8')
-                  }else{
-                      isImported = true;
-                  }
+                    if(col.length === 0){
+                        return iutil.readFileAsync(file,'utf8')
+                    }else{
+                        isImported = true;
+                    }
                 })
                 .then(function(data){
-                    if(data !== undefined){
+                    if(data && !isImported){
                         var stringTagsArray = data.split('\r\n');
-                        var objectTagsArray = []
                         stringTagsArray.forEach(function(data){
                             var current = data.split('\t');
                             if(current[0]!=='tagID'){
@@ -50,12 +52,43 @@ var Tag = function(){
                 })
                 .then(function(){
                     if(!isImported){
-                        return readFileAsync('./data/user_taggedartists-timestamps.dat','utf8');
+                        var data = [];
+                        objectTagsArray.forEach(function(tag){
+                            var stm = {
+                                "statement":  'CREATE (t:Tag {tag})',
+                                "parameters": {
+                                    "tag": {
+                                        "id": tag._id,
+                                        "description": tag.description
+                                    }
+                                }
+                            };
+                            data.push(stm);
+                        });
+                        return iutil.statementRequest(data);
                     }
                 })
+                .then(function(res){
+                    console.log("All tags were successfully saved");
+                    deferred.resolve(res);
+                })
+                .catch(function(error){
+                    console.log(error.stack);
+                    deferred.reject(error);
+                })
+                .done();
+            return deferred.promise;
+        },
+        importTagsRelationships: function (filename){
+
+
+            var promise =  iutil.readFileAsync(filename,'utf8');
+            var deferred = Q.defer();
+
+            promise
                 .then(function(data){
-                    if(data !== undefined){
-                        var stringTaggedArtistsArray = data.split('\r\n');
+                    if(data){
+                        var stringTaggedArtistsArray = data.split('\n');
                         stringTaggedArtistsArray.forEach(function(data){
                             var current = data.split('\t');
                             if(current[0]!=='userID'){
@@ -69,40 +102,53 @@ var Tag = function(){
                                 }
                             }
                         })
-                        return Artist.model.find({}).exec();
+                        return  Q.ninvoke(Artist.model,"find",{});
                     }
                 })
                 .then(function(col){
-                    if(col!== undefined){
+                    if(col){
                         allArtists = col;
-                        var taggetArtists = []
-                        var getTagByArtist = function(id){
-                            var tagsByArtist = [];
-                            objectTaggedArtistArray.forEach(function(data){
-                                if(data.artistid == id){
-                                    tagsByArtist.push(data.tagid);
-                                }
-                            })
-                            return tagsByArtist;
-                        }
-                        if(allArtists !== undefined && allTags!== undefined){
+                        if(allArtists){
                             allArtists.forEach(function(artist){
-                                var tagsByArtist = getTagByArtist(artist._id);
+                                var tagsByArtist = iutil.getTagByArtist(artist._id,objectTaggedArtistArray);
                                 artist.tags = tagsByArtist;
-                                taggetArtists.push(artist);
-                                console.log(artist);
+                                taggedArtists.push(artist);
                             })
                         }
-                        var promises = taggetArtists.map(function(data){
+                        var promises = taggedArtists.map(function(data){
                             return data.save();
                         });
                         return Q.all(promises);
                     }
-
                 })
+
                 .then(function(){
-                    console.log("All Artists are saved");
-                });
+                    var data = [];
+                    taggedArtists.forEach(function(artist){
+                        artist.tags.forEach(function(tag){
+                            if(tag && artist){
+                                var stm = {
+                                    "statement": 'MATCH (t:Tag),(a:Artist) ' +
+                                    'WHERE t.id="'+tag.tagid+'" AND a.id="'+artist._id+'" '+
+                                    'CREATE (a)-[:TAGGED_WITH {userid: '+ tag.userid+' }]->(t)'
+                                };
+                                data.push(stm);
+                            }
+
+                        })
+                    })
+                    return iutil.statementRequest(data);
+                })
+                .then(function(res){
+                    console.log("All tags were saved");
+                    deferred.resolve(res);
+                })
+                .catch(function(error){
+                    console.log(error.stack);
+                    deferred.reject(error);
+                }).done();
+
+            return deferred.promise;
         },
 
     };

@@ -10,3 +10,6 @@ exports.hashPwd = function(salt,pwd){
   var hmac = crypto.createHmac('sha1',salt);
   return hmac.update(pwd).digest('hex');
 }
+exports.base64Encoding = function(string){
+  return new Buffer(string).toString('base64');
+}

@@ -6,7 +6,7 @@ var User = function () {
     var mongoose = require('mongoose'),
         enc = require('../utilities/encryption');
     var Q = require('q');
-    var fs = require('fs');
+    var iutil = require('../services/import')
 
     var ArtistData = mongoose.Schema({
         _id: Number,
@@ -23,30 +23,30 @@ var User = function () {
     });
 
     UserSchema.methods = {
-        importUserData: function () {
-            var readFileAsync = function(name,type){
-                return Q.nfcall(fs.readFile,name,type);
-            }
-            var promise = _model.find({}).exec();
+        importUserData: function (file1,file2) {
+            var deferred = Q.defer();
             var isImported = false;
             var stringUserArray = [];
             var objectUserArray = [];
             var stringFriendsArray = [];
+
+            var promise = Q.ninvoke(_model,"find",{});
+
             promise
                 .then(function(col){
                     if(col.length === 0){
-                        return readFileAsync('./data/user_artists.dat','utf8')
+                        return iutil.readFileAsync(file1,'utf8')
                     }else{
                         isImported = true;
                     }
                 })
                 .then(function(data){
-                    if(data !== undefined) {
+                    if(data && !isImported) {
                         stringUserArray = data.split('\r\n');
                         var savedUsers = []
                         stringUserArray.forEach(function (data) {
                             var current = data.split('\t');
-                            if (current[0] !== 'userID') {
+                            if (current[0] !== 'userID' && current[0] !== '') {
                                 if (savedUsers.indexOf(current[0]) < 0) {
                                     var newUser = {
                                         _id: current[0],
@@ -60,57 +60,159 @@ var User = function () {
 
                             }
                         });
-                        return readFileAsync('./data/user_friends.dat','utf8')
-
-
+                        return iutil.readFileAsync(file2,'utf8')
                     }
                 })
+
                 .then(function(data){
-                    var getArtistsFromUser = function(id,array){
-                        var artists = [];
-                        array.forEach(function(data){
-                            var current = data.split('\t');
-                            if(current[0] !== 'userID' && current[0] === id){
-                                artists.push({
-                                    _id: current[1],
-                                    count: current[2]
-                                });
-                            }
-                        });
-                        return artists;
-                    };
-                    var getFriendsFromUser = function(id,array){
-                        var friends = [];
-                        array.forEach(function(data){
-                            var current = data.split('\t');
-                            if(current[0] !== 'userID' && current[0] === id){
-                                friends.push(current[1]);
-                            }
-                        });
-                        return friends;
-                    }
-                    if(data!= undefined){
+                    if(data && !isImported){
                         stringFriendsArray = data.split('\r\n');
                         objectUserArray.forEach(function(user){
-                            user.artists = getArtistsFromUser(user._id,stringUserArray);
-                            user.friends = getFriendsFromUser(user._id,stringFriendsArray);
-                            console.log(user);
+                            user.artists = iutil.getArtistsFromUser(user._id,stringUserArray);
+                            user.friends = iutil.getFriendsFromUser(user._id,stringFriendsArray);
                         });
+                        var promises = objectUserArray.map(function(data){
+                            return Q.ninvoke(_model,"create",data);
+                        });
+                        return Q.all(promises);
                     }
-                    var promises = objectUserArray.map(function(data){
-                        return Q.ninvoke(_model,"create",data);
-                    });
-                    return Q.all(promises);
 
                 })
+
                 .then(function(){
-                    console.log("All Users were saved");
-                },function(err){
-                    throw err;
-                });
+                    if(!isImported) {
+                        var data = [];
+                        objectUserArray.forEach(function(user){
+                            var stm = {
+                                "statement":  'CREATE (u:User {user})',
+                                "parameters": {
+                                    "user": {
+                                        "id": user._id,
+                                        "email": "datamodels@sydney.edu.au",
+                                        "password": "adm"
+                                    }
+                                }
+                            };
+                            data.push(stm);
+
+                        });
+                        return iutil.statementRequest(data);
+                    }
+                }).then(function(){
+                    if(!isImported){
+                        var data = [];
+                        objectUserArray.forEach(function(user){
+                            user.friends.forEach(function(friend){
+                                if(user && friend){
+                                    var stm = {
+                                        "statement": 'MATCH (u:User),(f:User) ' +
+                                        'WHERE u.id="'+user._id+'" AND f.id="'+friend+'" '+
+                                        'CREATE (u)-[:FRIEND]->(f)'
+                                    };
+                                    data.push(stm);
+                                }
+                            });
+
+                        });
+                        return iutil.statementRequest(data);
+                    }
+                })
+                .then(function(){
+                    if(!isImported){
+                        var data = []
+                        objectUserArray.forEach(function(user){
+                            user.artists.forEach(function(artist){
+                                if(user && artist){
+                                    var stm = {
+                                        "statement": 'MATCH (u:User),(a:Artist) ' +
+                                        'WHERE u.id="'+user._id+'" AND a.id="'+artist._id+'" '+
+                                        'CREATE (u)-[:LIKE {count: '+artist.count+'}]->(a)'
+                                    };
+                                    data.push(stm);
+                                }
+
+                            })
+                        })
+                        return iutil.statementRequest(data);
+                    }
+                })
+                .then(function(res){
+                    console.log("All users were saved")
+                    deferred.resolve(res)
+                })
+                .catch(function(error){
+                    deferred.reject(error);
+                }).done();
+
+            return deferred.promise;
 
         },
+        friend: function(user1_id,user2_id){
+            var deferred = Q.defer();
+            var query = {
+                "query": 'MATCH (u:User),(f:User) ' +
+                'WHERE u.id={id1} AND f.id={id2} '+
+                'CREATE (u)-[r1:FRIEND]->(f),(f)-[r2:FRIEND]->(u) RETURN r1,r2',
+                "params":{
+                    id1: user1_id.toString(),
+                    id2: user2_id.toString()
+                }
+            };
+            iutil.cypherRequest(query)
+                .then(function(res){
+                    if(res.body.data[0].length == 2){
+                        var result = [];
+                        result.push(res.body.data[0][0].metadata);
+                        result.push(res.body.data[0][1].metadata);
+                        deferred.resolve(result);
+                    }else{
+                        deferred.reject("Could create the relationship between User: "+user1_id+" and User: "+user2_id);
+                    }
+                },function(err){
+                    deferred.reject(err);
+                });
+            return deferred.promise;
 
+        },
+        findById: function(id){
+            var deferred = Q.defer();
+            var query = {
+                query: "MATCH (u:User) WHERE u.id={id} RETURN u",
+                params:{
+                    id: id.toString()
+                }
+            }
+            iutil.cypherRequest(query)
+                .then(function(res){
+                    if(res.body.data.length>0){
+                        deferred.resolve(res.body.data[0][0].data);
+                    }else{
+                        deferred.reject("Could not find User with id: "+id);
+                    }
+                })
+            return deferred.promise;
+
+        },
+        findAllUserFriends: function(userId){
+            var deferred = Q.defer();
+            var query = {
+                query: "MATCH (u:User),(f:User),(u)-[:FRIEND]->(f) WHERE u.id={id} RETURN f",
+                params:{
+                    id: userId.toString()
+                }
+            }
+            iutil.cypherRequest(query)
+                .then(function(res){
+                    var result = [];
+                    res.body.data.forEach(function(dt){
+                        result.push(dt[0].data);
+                    });
+                    deferred.resolve(result);
+                },function(error){
+                    deferred.reject(error);
+                });
+            return deferred.promise;
+        },
         comparePasswords: function (password) {
             if (enc.hashPwd(this.salt, password) === this.password) {
                 return true;
@@ -118,7 +220,6 @@ var User = function () {
             else {
                 return false
             }
-            ;
         },
         toJSON: function () {
             var user = this.toObject();
