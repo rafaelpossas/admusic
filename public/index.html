@@ -11,19 +11,26 @@
 </head>
 <body ng-app="procymo-admin">
 
-
-        <nav ng-include="'html/main/header.html'"></nav>
-
-        <div class="view-animate-container">
-            <div ng-view class="view-animate container-fluid"></div>
-        </div>
-
-
-        <div class="alert alert-{{alert.type}} animated main-alert" ng-class="{'flipInY': alert.show, 'flipOutY': !alert.show, 'alert-hidden': !alert.hasBeenShown}"><strong>{{alert.title}}</strong> {{alert.message}}</div>
-
-        <div id="footer" style="bottom: 0px;">
+    <div id="wrapper" class="flex-container wrap row">
+        <div class="sidebar" ng-controller="sidebarCtrl" ng-include="'html/main/sidebar.html'" ng-show="isAuthenticated">
 
         </div>
+        <div id="ngView" ng-view="" class="view-animate-container content stretch"></div>
+    </div>
+    <div class="alert alert-{{alert.type}} animated main-alert"
+         ng-class="{'flipInY': alert.show, 'flipOutY': !alert.show, 'alert-hidden': !alert.hasBeenShown}"><strong>{{alert.title}}</strong>
+        {{alert.message}}
+    </div>
+
+
+    <footer ng-show="isAuthenticated">
+        <i class="fa fa-play"></i>
+        &nbsp;&nbsp; Current Playing:&nbsp;&nbsp;
+        <div style="flex-grow: .5;">{{currentPlaying.name}}</div>
+        <div>Listening count: {{currentPlaying.count}} </div>
+
+    </footer>
+
 
     <!-- bower:js -->
     <script src="vendor/jquery/dist/jquery.js"></script>
@@ -45,6 +52,10 @@
     <script src="javascripts/account/ValidateEquals.directive.js"></script>
     <script src="javascripts/main/Header.controller.js"></script>
     <script src="javascripts/tournament/Brackets.controller.js"></script>
+    <script src="javascripts/sidebar/Sidebar.controller.js"></script>
+    <script src="javascripts/artists/Artists.controller.js"></script>
+    <script src="javascripts/users/Users.controller.js"></script>
+    <script src="javascripts/main/Footer.service.js"></script>
 
 </body>
 </html>

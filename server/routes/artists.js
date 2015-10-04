@@ -10,11 +10,10 @@
 var express = require('express');
 var router = express.Router();
 var artists = require('../controllers/artists');
-
+router.get('/',artists.getAllArtists);
 router.get('/recommend',artists.recommendArtists);
 router.get('/rank',artists.rankArtists);
-router.get('/neo4j/:id',artists.getArtistNeo4j);
-router.get('/:id',artists.getArtistMongoDB);
+router.get('/:id',artists.getArtistInformation);
 router.post('/:id/listen',artists.listenArtist);
 router.post('/:id/tag',artists.tagArtist);
 

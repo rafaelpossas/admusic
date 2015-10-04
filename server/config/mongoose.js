@@ -7,6 +7,7 @@ var mng = function(address,importData){
     var Tag = require('../models/Tag');
     var User = require('../models/User')
     var iutil = require('../services/import');
+    var neo4j = require('../services/neo4j');
     var Q = require('q');
 
     var deferred = Q.defer();
@@ -39,23 +40,23 @@ var mng = function(address,importData){
         Tag.model.collection.remove();
         User.model.collection.remove();
 
-        var promise = iutil.cleanNeo4j();
+        var promise = neo4j.cleanNeo4j();
 
         promise
             .then(function(res){
-                return Artist.schema.methods.importArtists();
+                return iutil.importArtists();
             })
             .then(function(){
                 console.log("Importing Users.");
-                return User.schema.methods.importUserData(user_file1,user_file2);
+                return iutil.importUsers(user_file1,user_file2);
             })
             .then(function(){
                 console.log("Importing Tags.");
-                return Tag.schema.methods.importTags(tags_file1);
+                return iutil.importTags(tags_file1);
             })
             .then(function(){
                 console.log("Importing Tags relationships #1.");
-                return Tag.schema.methods.importTagsRelationships(tags_file2);
+                return iutil.importTagsRelationships(tags_file2);
             })
             .then(function(){
                 console.log("Tag relationships were successfully saved")

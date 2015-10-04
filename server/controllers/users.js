@@ -73,6 +73,15 @@ var getFriends = function(req,res,next){
             res.status(500).send({message: err});
         })
 }
+var getNonFriends = function(req,res,next){
+    var promise = User.schema.methods.findAllNonUserFriends(req.params.id);
+    promise
+        .then(function(data){
+            res.status(200).send(data);
+        },function(err){
+            res.status(500).send({message: err});
+        })
+}
 var loginSuccessful = function (req, res) {
     createToken(req.user, res)
 }
@@ -82,3 +91,4 @@ exports.createUser = createUser;
 exports.createToken = createToken;
 exports.friend = friend;
 exports.getFriends = getFriends;
+exports.getNonFriends = getNonFriends;

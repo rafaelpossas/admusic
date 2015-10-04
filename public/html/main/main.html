@@ -1,14 +1,57 @@
-<div class="jumbotron">
-    <div class="row">
-        <img src="../../img/stairs.png" class="stairs col-lg-4">
-        <div class="col-lg-8">
-            <h2>Welcome to University of Sydney Health Competition</h2>
-            <p> Show us that you can improve your health and get fit just by using the University stairs</p>
+<div class="stretch">
+    <h1> Welcome to ADMUSIC, {{user.email}}!</h1>
+    <h2>See your recommendations below</h2>
+    <div id="recommendations" class="flex-container wrap row">
+        <div style="flex: 1;margin-right: 10px">
+            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Friends Listening Count</h3>
+            <ol class="rectangle-list">
+                <li ng-repeat="rec in recByListeningCount">
+                    <a>{{rec.name}}&nbsp;({{rec.count}})</a>
+                </li>
+            </ol>
         </div>
-
+        <div style="flex:1;margin-right: 10px">
+            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Unique friends listening</h3>
+            <ol class="rectangle-list">
+                <li ng-repeat="rec in recByFriendsCount">
+                    <a>{{rec.name}}&nbsp;({{rec.count}})</a>
+                </li>
+            </ol>
+        </div>
+        <div style="flex: 1;margin-right: 10px">
+            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Random Tag</h3>
+            <ol class="rectangle-list">
+                <li ng-repeat="rec in recByTag">
+                    <a>{{rec.name}}&nbsp;({{rec.count}})</a>
+                </li>
+            </ol>
+        </div>
     </div>
-    <div class="row">
-        <p><a class="btn btn-primary btn-lg col-lg-offset-5" href="/register" role="button">Create Account</a></p>
+    <h2>Popular Artists</h2>
+    <div id="popular" class="flex-container wrap row">
+        <div style="flex: 1;margin-right: 10px">
+            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Total Listening count</h3>
+            <ol class="rectangle-list">
+                <li ng-repeat="rec in rankByListeningCount">
+                    <a>{{rec.name}}&nbsp;({{rec.count}})</a>
+                </li>
+            </ol>
+        </div>
+        <div style="flex: 1;margin-right: 10px">
+            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Unique user count</h3>
+            <ol class="rectangle-list">
+                <li ng-repeat="rec in rankByUserCount">
+                    <a>{{rec.name}}&nbsp;({{rec.count}})</a>
+                </li>
+            </ol>
+        </div>
+        <div style="flex: 1;margin-right: 10px">
+            <select class="form-control" style="margin-top: 9px" ng-change="getRankByGivenTag()" ng-model="currentTag" ng-options="tag.description for tag in allTags"/>
+            <ol class="rectangle-list">
+                <li ng-repeat="rec in rankByGivenTag">
+                    <a>{{rec.name}}&nbsp;({{rec.count}})</a>
+                </li>
+            </ol>
+        </div>
     </div>
-
 </div>

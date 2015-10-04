@@ -56,9 +56,11 @@ var express = function () {
 
     var users = require(global.config.rootPath + '/server/routes/users');
     var artists = require(global.config.rootPath + '/server/routes/artists');
+    var tags = require(global.config.rootPath + '/server/routes/tags');
 
     app.use('/users', users);
     app.use('/artists', artists);
+    app.use('/tags',tags);
 
     if (global.config.name == 'prod') {
         app.use(express.static(global.config.rootPath + '/public/'));

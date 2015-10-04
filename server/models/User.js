@@ -6,7 +6,7 @@ var User = function () {
     var mongoose = require('mongoose'),
         enc = require('../utilities/encryption');
     var Q = require('q');
-    var iutil = require('../services/import')
+    var neo4j = require('../services/neo4j')
 
     var ArtistData = mongoose.Schema({
         _id: Number,
@@ -23,192 +23,88 @@ var User = function () {
     });
 
     UserSchema.methods = {
-        importUserData: function (file1,file2) {
-            var deferred = Q.defer();
-            var isImported = false;
-            var stringUserArray = [];
-            var objectUserArray = [];
-            var stringFriendsArray = [];
-
-            var promise = Q.ninvoke(_model,"find",{});
-
-            promise
-                .then(function(col){
-                    if(col.length === 0){
-                        return iutil.readFileAsync(file1,'utf8')
-                    }else{
-                        isImported = true;
-                    }
-                })
-                .then(function(data){
-                    if(data && !isImported) {
-                        stringUserArray = data.split('\r\n');
-                        var savedUsers = []
-                        stringUserArray.forEach(function (data) {
-                            var current = data.split('\t');
-                            if (current[0] !== 'userID' && current[0] !== '') {
-                                if (savedUsers.indexOf(current[0]) < 0) {
-                                    var newUser = {
-                                        _id: current[0],
-                                        email: "datamodels@sydney.edu.au",
-                                        password: "adm"
-                                    };
-                                    savedUsers.push(current[0]);
-                                    objectUserArray.push(newUser);
-
-                                }
-
-                            }
-                        });
-                        return iutil.readFileAsync(file2,'utf8')
-                    }
-                })
-
-                .then(function(data){
-                    if(data && !isImported){
-                        stringFriendsArray = data.split('\r\n');
-                        objectUserArray.forEach(function(user){
-                            user.artists = iutil.getArtistsFromUser(user._id,stringUserArray);
-                            user.friends = iutil.getFriendsFromUser(user._id,stringFriendsArray);
-                        });
-                        var promises = objectUserArray.map(function(data){
-                            return Q.ninvoke(_model,"create",data);
-                        });
-                        return Q.all(promises);
-                    }
-
-                })
-
-                .then(function(){
-                    if(!isImported) {
-                        var data = [];
-                        objectUserArray.forEach(function(user){
-                            var stm = {
-                                "statement":  'CREATE (u:User {user})',
-                                "parameters": {
-                                    "user": {
-                                        "id": user._id,
-                                        "email": "datamodels@sydney.edu.au",
-                                        "password": "adm"
-                                    }
-                                }
-                            };
-                            data.push(stm);
-
-                        });
-                        return iutil.statementRequest(data);
-                    }
-                }).then(function(){
-                    if(!isImported){
-                        var data = [];
-                        objectUserArray.forEach(function(user){
-                            user.friends.forEach(function(friend){
-                                if(user && friend){
-                                    var stm = {
-                                        "statement": 'MATCH (u:User),(f:User) ' +
-                                        'WHERE u.id="'+user._id+'" AND f.id="'+friend+'" '+
-                                        'CREATE (u)-[:FRIEND]->(f)'
-                                    };
-                                    data.push(stm);
-                                }
-                            });
-
-                        });
-                        return iutil.statementRequest(data);
-                    }
-                })
-                .then(function(){
-                    if(!isImported){
-                        var data = []
-                        objectUserArray.forEach(function(user){
-                            user.artists.forEach(function(artist){
-                                if(user && artist){
-                                    var stm = {
-                                        "statement": 'MATCH (u:User),(a:Artist) ' +
-                                        'WHERE u.id="'+user._id+'" AND a.id="'+artist._id+'" '+
-                                        'CREATE (u)-[:LIKE {count: '+artist.count+'}]->(a)'
-                                    };
-                                    data.push(stm);
-                                }
-
-                            })
-                        })
-                        return iutil.statementRequest(data);
-                    }
-                })
-                .then(function(res){
-                    console.log("All users were saved")
-                    deferred.resolve(res)
-                })
-                .catch(function(error){
-                    deferred.reject(error);
-                }).done();
-
-            return deferred.promise;
-
-        },
-        friend: function(user1_id,user2_id){
+        friend: function (user1_id, user2_id) {
             var deferred = Q.defer();
             var query = {
                 "query": 'MATCH (u:User),(f:User) ' +
-                'WHERE u.id={id1} AND f.id={id2} '+
+                'WHERE u.id={id1} AND f.id={id2} ' +
                 'CREATE (u)-[r1:FRIEND]->(f),(f)-[r2:FRIEND]->(u) RETURN r1,r2',
-                "params":{
+                "params": {
                     id1: user1_id.toString(),
                     id2: user2_id.toString()
                 }
             };
-            iutil.cypherRequest(query)
-                .then(function(res){
-                    if(res.body.data[0].length == 2){
+            neo4j.cypherRequest(query)
+                .then(function (res) {
+                    if (res.body.data[0].length == 2) {
                         var result = [];
                         result.push(res.body.data[0][0].metadata);
                         result.push(res.body.data[0][1].metadata);
                         deferred.resolve(result);
-                    }else{
-                        deferred.reject("Could create the relationship between User: "+user1_id+" and User: "+user2_id);
+                    } else {
+                        deferred.reject("Could create the relationship between User: " + user1_id + " and User: " + user2_id);
                     }
-                },function(err){
+                }, function (err) {
                     deferred.reject(err);
                 });
             return deferred.promise;
 
         },
-        findById: function(id){
+        findById: function (id) {
             var deferred = Q.defer();
             var query = {
                 query: "MATCH (u:User) WHERE u.id={id} RETURN u",
-                params:{
+                params: {
                     id: id.toString()
                 }
             }
-            iutil.cypherRequest(query)
-                .then(function(res){
-                    if(res.body.data.length>0){
+            neo4j.cypherRequest(query)
+                .then(function (res) {
+                    if (res.body.data.length > 0) {
                         deferred.resolve(res.body.data[0][0].data);
-                    }else{
-                        deferred.reject("Could not find User with id: "+id);
+                    } else {
+                        deferred.reject("Could not find User with id: " + id);
                     }
                 })
             return deferred.promise;
 
         },
-        findAllUserFriends: function(userId){
+        findAllUserFriends: function (userId) {
             var deferred = Q.defer();
             var query = {
                 query: "MATCH (u:User),(f:User),(u)-[:FRIEND]->(f) WHERE u.id={id} RETURN f",
-                params:{
+                params: {
                     id: userId.toString()
                 }
             }
-            iutil.cypherRequest(query)
-                .then(function(res){
+            neo4j.cypherRequest(query)
+                .then(function (res) {
                     var result = [];
-                    res.body.data.forEach(function(dt){
+                    res.body.data.forEach(function (dt) {
                         result.push(dt[0].data);
                     });
                     deferred.resolve(result);
-                },function(error){
+                }, function (error) {
+                    deferred.reject(error);
+                });
+            return deferred.promise;
+        },
+        findAllNonUserFriends: function (id) {
+            var deferred = Q.defer();
+            var query = {
+                query: "MATCH (u:User),(f:User) WHERE NOT (u)-[:FRIEND]->(f) AND u.id={id} AND NOT f.id={id} RETURN f",
+                params: {
+                    id: id.toString()
+                }
+            }
+            neo4j.cypherRequest(query)
+                .then(function (res) {
+                    var result = [];
+                    res.body.data.forEach(function (dt) {
+                        result.push(dt[0].data);
+                    });
+                    deferred.resolve(result);
+                }, function (error) {
                     deferred.reject(error);
                 });
             return deferred.promise;
@@ -225,6 +121,8 @@ var User = function () {
             var user = this.toObject();
             delete user.password;
             delete user.salt;
+            delete user.artists;
+            delete user.friends;
             return user;
         }
     };

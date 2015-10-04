@@ -6,9 +6,9 @@
  */
 var express = require('express');
 var router = express.Router();
-var taps = require('../controllers/tags')
-/* GET users listing. */
+var tags = require('../controllers/tags')
 
-router.get('/',taps.getTaps);
+
+router.get('/',tags.getAllTags);
 
 module.exports = router;

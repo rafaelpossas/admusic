@@ -1,0 +1,38 @@
+<div class="stretch">
+    <h1 class="stretch"><span><i class="fa fa-smile-o page-title-icon"></i></span>Find new friends </h1>
+    <div class="flex-container row wrap">
+        <div class="new-friends-box">
+            <ul class="flex-container wrap">
+                <li class="friends-box" ng-repeat="user in all | orderBy: 'email'">
+                    <div id="image-friend">
+                        <i class="fa fa-user"></i>
+                    </div>
+                    <div style="text-align: center;margin-bottom: 8px">
+                        <button class="btn btn-success btn-sm" ng-click="addFriend(user.id)">Add as Friend</button>
+                    </div>
+                    <div id="description-friend" style="text-align: center">
+                        {{user.email}}
+                    </div>
+
+                </li>
+
+            </ul>
+        </div>
+    </div>
+    <h1 class="stretch"><span><i class="fa fa-users page-title-icon"></i></span>Browse all your friends </h1>
+    <div class="flex-container row wrap">
+        <ul class="flex-container wrap">
+            <li class="friends-box" ng-repeat="user in friends | orderBy: 'email'">
+                <div id="image">
+                    <i class="fa fa-user"></i>
+                </div>
+                <div id="description" style="text-align: center">
+                    {{user.email}}
+                </div>
+            </li>
+
+        </ul>
+    </div>
+</div>
+
+
