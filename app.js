@@ -4,7 +4,7 @@ var _app = function(){
     global.config = require('./server/config/config')[global.env];
     global.logger = require('morgan');
     var app = require('./server/config/express');
-    require('./server/config/mongoose')(global.config.db,true);
+    require('./server/config/mongoose')(global.config.db,false);
 
     /*
 

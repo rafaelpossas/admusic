@@ -4,12 +4,12 @@
         <h1 class="stretch"><span><i class="fa fa-headphones page-title-icon"></i></span>Browse All Artists</h1>
         <div style="flex: .5;margin: 21px 0px 10.5px 0px;">
             <i class="fa fa-search page-title-icon" style="padding-top:4px;float: left;"></i>
-            <input type="text" class="form-control" ng-model="searchTerm" name="searchbox" style="width: 90%" placeholder="search for artists"/>
+            <input type="text" class="form-control" ng-model="searchTerm" ng-model-options="{debounce: 2000}" name="searchbox" style="width: 90%" placeholder="search for artists"/>
         </div>
 
     </div>
     <ul class="flex-container wrap">
-        <li class="artist-box" ng-repeat="artist in artists | filter: searchTerm | orderBy: 'name'">
+        <li class="artist-box" ng-repeat="artist in artists | orderBy: 'name'">
             <div id="image">
                 <i class="fa fa-music"></i>
             </div>

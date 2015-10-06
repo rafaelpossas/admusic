@@ -85,7 +85,7 @@ var Artist = function () {
 
                         neo4j.cypherRequest(query)
                             .then(function () {
-                                return ArtistSchema.methods.getArtistInformation(artist._id)
+                                return ArtistSchema.methods.getArtistInformationMongoDB(artist._id)
                             }).then(function (res) {
                                 resolve(res);
                             }, function (err) {
@@ -237,50 +237,6 @@ var Artist = function () {
                 });
             return deferred.promise;
         },
-/*
-        recommendTopFiveArtistsByFriendsListeningCountPolyglot: function (id) {
-            var deferred = Q.defer();
-            var friends = [];
-            var currentCount;
-            User.schema.methods.findFriendsArtistListeningCount(id)
-                .then(function (data) {
-                    data.forEach(function (friend) {
-                        friends.push(Number(friend.id));
-                    });
-                    return User.model.aggregate(
-                        {$match: {_id: {$in: friends}}},
-                        {$unwind: "$artists"},
-                        {$group: {_id: "$artists._id", count: {$sum: "$artists.count"}}},
-                        {$sort: {count: -1}},
-                        {$limit: 5}).exec();
-                })
-                .then(function (res) {
-                    var artistStringArray;
-                    var artists = [];
-                    currentCount = res;
-                    currentCount.forEach(function (artist) {
-                        artists.push(Number(artist._id));
-                    });
-                    artistStringArray = ArtistSchema.methods.getArtistsStringByArray(artists);
-                    return ArtistSchema.methods.findAllArtistsByGroup(artistStringArray);
-                }).then(function (res) {
-                    currentCount.forEach(function (count) {
-                        res.forEach(function (artist) {
-                            if (count._id == artist.id) {
-                                count.name = artist.name;
-                                count.img = artist.img;
-                                count.url = artist.url;
-                            }
-                        });
-                    });
-                    deferred.resolve(currentCount);
-                }, function (err) {
-                    console.log(err);
-                    deferred.reject(err);
-                });
-            return deferred.promise;
-
-        },*/
         recommendTopFiveArtistsByFriendsCountMongoDB: function (id) {
             var deferred = Q.defer();
             User.model.find({_id:id}, {"artists._id":1}).exec()
@@ -331,33 +287,6 @@ var Artist = function () {
                 });
             return deferred.promise;
         },
-/*        recommendTopFiveArtistsByFriendsCountPolyglot: function (id) {
-            var deferred = Q.defer();
-            var friends = [];
-            var currentCount;
-            User.schema.methods.findAllUserFriends(id)
-                .then(function (data) {
-                    data.forEach(function (friend) {
-                        friends.push(Number(friend.id));
-                    });
-                    return User.model.aggregate(
-                        {$match: {_id: {$in: friends}}},
-                        {$unwind: "$artists"},
-                        {$group: {_id: "$artists._id", count: {$sum: 1}}},
-                        {$sort: {count: -1}},
-                        {$limit: 5}).exec();
-                })
-                .then(function (res) {
-                    return ArtistSchema.methods.formatArtistsCountByIds(res);
-                }).then(function (data) {
-                    deferred.resolve(data);
-                }, function (err) {
-                    console.log(err);
-                    deferred.reject(err);
-                });
-            return deferred.promise;
-
-        },*/
         recommendByTagMongoDB: function(id){
             var deferred = Q.defer();
             var artistsIds=[];
@@ -493,7 +422,8 @@ var Artist = function () {
                     var artistsArray = ArtistSchema.methods.getArtistsStringByArray(artistsIds);
                     var query = {
                         "query": "MATCH (u:User)-[l:LISTEN]->(a:Artist),(b:User) WHERE a.id IN ["+artistsArray+"] " +
-                                 "AND NOT((a)<-[:LISTEN]-(b)) AND b.id={uid} RETURN a.id,a.img,a.name,a.url,count(l)",
+                                 "AND NOT((a)<-[:LISTEN]-(b)) AND b.id={uid} RETURN a.id,a.img,a.name,a.url,count(l) as count " +
+                                 "ORDER BY count DESC LIMIT 5 ",
                         "params":{
                             uid: id.toString()
                         }

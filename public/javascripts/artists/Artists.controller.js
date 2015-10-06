@@ -7,31 +7,42 @@ app.controller('artistsCtrl', ['$scope','$rootScope','API_URL','$http','footer',
     $scope.allTags;
     $scope.currentTag;
 
+    var url = API_URL + 'artists';
+    var url_tags = API_URL + 'tags';
+
     $rootScope.artist = {};
     (function(){
         $('.nav li a').removeClass('active');
         $('.nav li:nth-child(2) > a').addClass('active');
-        var url = API_URL + 'artists';
-        var url_tags = API_URL + 'tags';
-        $http.get(url).success(function(artists){
-            $scope.artists = artists;
-        });
-        $http.get(url_tags).success(function(tags){
-            $scope.allTags = tags;
-            $scope.currentTag = tags[0];
-        });
     })();
     $scope.play = function(artist){
         footer.play(artist);
     }
     $scope.getDescription = function(artist){
-        var url = API_URL + 'artists/'+artist.id;
+        var url = API_URL + 'artists/'+artist._id;
+        if(!$scope.allTags){
+            $http.get(url_tags).success(function(tags){
+                $scope.allTags = tags;
+                $scope.currentTag = tags[0];
+            });
+        }
         $http.get(url).success(function(artist){
             $scope.currentArtist = artist;
             $("#artistModal").modal();
         });
 
     }
+    $scope.$watch('searchTerm', function(nVal, oVal) {
+        if (nVal !== oVal) {
+            $http({
+                url: url,
+                method: "GET",
+                params: {name: $scope.searchTerm}
+            }).success(function(data){
+                $scope.artists = data;
+            });
+        }
+    })
     $scope.addTag = function(){
         var exists = false;
         $scope.currentArtist.tags.forEach(function(ctag){
@@ -43,7 +54,7 @@ app.controller('artistsCtrl', ['$scope','$rootScope','API_URL','$http','footer',
             console.log("Tag already exists");
         }else{
             var url = API_URL + 'artists/'+$scope.currentArtist._id+"/tag";
-            $http.post(url,{user: $rootScope.user._id,tag: $scope.currentTag.id})
+            $http.post(url,{user: $rootScope.user._id,tag: $scope.currentTag._id})
                 .success(function(res){
                     $scope.currentArtist = res;
                 })

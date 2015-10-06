@@ -10,7 +10,7 @@
 var express = require('express');
 var router = express.Router();
 var artists = require('../controllers/artists');
-router.get('/',artists.getAllArtists);
+router.get('/',artists.getArtist);
 router.get('/recommend',artists.recommendArtists);
 router.get('/rank',artists.rankArtists);
 router.get('/:id',artists.getArtistInformation);

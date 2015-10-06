@@ -11,7 +11,7 @@ describe("Artist",function(){
 
     before(function (done) {
         this.timeout(10000);
-        mng(global.config.db,true)
+        mng(global.config.db,false)
             .then(function(){
                 done();
             })

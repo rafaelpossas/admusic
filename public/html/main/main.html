@@ -3,49 +3,38 @@
     <h2>See your recommendations below</h2>
     <div id="recommendations" class="flex-container wrap row">
         <div style="flex: 1;margin-right: 10px">
-            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Friends Listening Count</h3>
+            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Recommendations</h3>
+            <select class="form-control" style="margin-top: 9px" ng-model="currentRec" ng-change="recommendArtists()" ng-options="rec.description for rec in recTypes"/>
             <ol class="rectangle-list">
-                <li ng-repeat="rec in recByListeningCount">
-                    <a>{{rec.name}}&nbsp;({{rec.count}})</a>
-                </li>
-            </ol>
-        </div>
-        <div style="flex:1;margin-right: 10px">
-            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Unique friends listening</h3>
-            <ol class="rectangle-list">
-                <li ng-repeat="rec in recByFriendsCount">
-                    <a>{{rec.name}}&nbsp;({{rec.count}})</a>
-                </li>
-            </ol>
-        </div>
-        <div style="flex: 1;margin-right: 10px">
-            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Random Tag</h3>
-            <ol class="rectangle-list">
-                <li ng-repeat="rec in recByTag">
+                <li ng-repeat="rec in recommendations">
                     <a>{{rec.name}}&nbsp;({{rec.count}})</a>
                 </li>
             </ol>
         </div>
     </div>
-    <h2>Popular Artists</h2>
     <div id="popular" class="flex-container wrap row">
         <div style="flex: 1;margin-right: 10px">
-            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Total Listening count</h3>
+            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Popular Artists</h3>
+            <select class="form-control" style="margin-top: 9px" ng-model="currentPop" ng-change="popularArtists()" ng-options="pop.description for pop in popTypes"/>
             <ol class="rectangle-list">
-                <li ng-repeat="rec in rankByListeningCount">
+                <li ng-repeat="rec in popular">
                     <a>{{rec.name}}&nbsp;({{rec.count}})</a>
                 </li>
             </ol>
         </div>
-        <div style="flex: 1;margin-right: 10px">
-            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Unique user count</h3>
+
+<!--        <div style="flex: 1;margin-right: 10px">
+            <select class="form-control" style="margin-top: 9px" ng-change="getRankByGivenTag()" ng-model="currentTag" ng-options="tag.description for tag in allTags"/>
             <ol class="rectangle-list">
-                <li ng-repeat="rec in rankByUserCount">
+                <li ng-repeat="rec in rankByGivenTag">
                     <a>{{rec.name}}&nbsp;({{rec.count}})</a>
                 </li>
             </ol>
-        </div>
+        </div>-->
+    </div>
+    <div id="tags" class="flex-container wrap row">
         <div style="flex: 1;margin-right: 10px">
+            <h3><span><i class="fa fa-list-ol"/></span>&nbsp;&nbsp;Artists by Tag</h3>
             <select class="form-control" style="margin-top: 9px" ng-change="getRankByGivenTag()" ng-model="currentTag" ng-options="tag.description for tag in allTags"/>
             <ol class="rectangle-list">
                 <li ng-repeat="rec in rankByGivenTag">
@@ -53,5 +42,6 @@
                 </li>
             </ol>
         </div>
+
     </div>
 </div>

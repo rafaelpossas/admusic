@@ -21,7 +21,7 @@ describe('User', function () {
     before(function (done) {
         totalDocuments = 0;
         this.timeout(10000);
-        mng(global.config.db,true)
+        mng(global.config.db,false)
             .then(function(){
                 done();
             })

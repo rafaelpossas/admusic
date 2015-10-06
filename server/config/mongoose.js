@@ -17,23 +17,26 @@ var mng = function(address,importData){
       connection.once('open',function callback() {
           console.log('Connected to: '+address)
       });
-    if(importData === true || typeof importData === "undefined"){
+    if(importData === true){
         var user_file1;
         var user_file2;
         var tags_file1;
         var tags_file2;
+        var tags_file3;
 
         if(global.config.name === 'dev' || global.config.name === 'prod'){
             user_file1 = './data/user_artists.dat';
             user_file2 = './data/user_friends.dat';
             tags_file1 = './data/tags.dat';
             tags_file2 = './data/user_taggedartists.dat';
+            tags_file3 = './data/user_taggedartists_2.dat'
         }else if(global.config.name === 'test'){
             user_file1 = './data/test/user_artists.dat';
             user_file2 = './data/test/user_friends.dat';
             tags_file1 = './data/test/tags.dat';
             tags_file2 = './data/test/user_taggedartists.dat';
         }
+
 
 
         Artist.model.collection.remove();
@@ -43,7 +46,7 @@ var mng = function(address,importData){
         var promise = neo4j.cleanNeo4j();
 
         promise
-            .then(function(res){
+            .then(function(){
                 return iutil.importArtists();
             })
             .then(function(){
@@ -59,6 +62,10 @@ var mng = function(address,importData){
                 return iutil.importTagsRelationships(tags_file2);
             })
             .then(function(){
+                console.log("Importing Tags relationships #2.");
+                return iutil.importTagsRelationships(tags_file3);
+            })
+            .then(function(){
                 console.log("Tag relationships were successfully saved")
                 deferred.resolve();
             })
@@ -66,7 +73,6 @@ var mng = function(address,importData){
                 console.log(error.stack?error.stack:error);
                 deferred.reject(error);
             }).done();
-
 
     }
     return deferred.promise

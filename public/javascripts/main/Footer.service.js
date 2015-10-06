@@ -6,9 +6,8 @@ app.service('footer', ['$rootScope','$http','API_URL',function($rootScope,$http,
 
     var play = function(artist){
         $rootScope.currentPlaying = {};
-        var url = API_URL + 'artists/'+artist.id+'/listen';
+        var url = API_URL + 'artists/'+artist._id+'/listen';
         $http.post(url,{user: $rootScope.user._id}).success(function(artist){
-            console.log(artist);
             $rootScope.currentPlaying = artist;
         });
     }

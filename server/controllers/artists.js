@@ -12,6 +12,20 @@ var ArtistController = function () {
                 next(err);
             });
     }
+    var getArtist = function(req,res,next){
+        var name;
+        if(req.query.name){
+            name = req.query.name;
+            var promise = Artist.model.find({name:new RegExp(name, 'i')});
+            promise
+                .then(function(data){
+                    res.status(200).send(data);
+                },function(err){
+                    res.status(501).send({message: err});
+                })
+        }
+
+    }
     var getAllArtists = function (req, res, next) {
         var promise = Artist.schema.methods.getAllArtists();
         promise
@@ -31,9 +45,8 @@ var ArtistController = function () {
             })
     }
     var listenArtist = function (req, res, next) {
-        var id = req.params.id;
+        var id = Number(req.params.id);
         var userid = req.body.user;
-        var user;
         var artist;
         var promise = Artist.model.findOne({_id: id}).exec();
         promise
@@ -119,7 +132,7 @@ var ArtistController = function () {
         tagArtist: tagArtist,
         recommendArtists: recommendArtists,
         rankArtists: rankArtists,
-        getAllArtists: getAllArtists
+        getArtist: getArtist
     }
 }();
 
